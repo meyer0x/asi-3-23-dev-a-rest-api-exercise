@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String @id @default(uuid())
+  email        String @unique
+  passwordHash String
+  passwordSalt String
+  firstName    String
+  lastName     String
+  role         Role   @relation(fields: [roleId], references: [id])
+  roleId       String
+
+  creatorPages  Page[] @relation("creator")
+  modifierPages Page[] @relation("modifier")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  permissions Permission[]
+  users       User[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Permission {
+  id String @id @default(uuid())
+
+  resource String
+  action   String
+
+  role Role[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Page {
+  id          String            @id @default(uuid())
+  title       String
+  content     String
+  slug        String            @unique
+  creator     User              @relation(fields: [creatorId], references: [id], "creator")
+  creatorId   String
+  modifiers   User[]            @relation("modifier")
+  date        DateTime          @default(now())
+  status      PageStatus        @default(DRAFT)
+  navigations NavigationPages[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model NavigationMenu {
+  id        String            @id @default(uuid())
+  name      String
+  pages     NavigationPages[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model NavigationPages {
+  id               String            @id @default(uuid())
+  page             Page              @relation(fields: [pageId], references: [id])
+  pageId           String
+  parent           NavigationPages?  @relation("Children", fields: [parentId], references: [id])
+  parentId         String?
+  children         NavigationPages[] @relation("Children")
+  navigationMenu   NavigationMenu?   @relation(fields: [navigationMenuId], references: [id])
+  navigationMenuId String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// Optional Form model
+// BONUS not included in this schema
+// model Form {
+//   id        String  @id @default(uuid())
+//   name      String
+//   fields    FormField[]
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model FormField {
+//   id           String   @id @default(uuid())
+//   type         String
+//   options      Json?
+//   label        String
+//   defaultValue String?
+//   form         Form     @relation(fields: [formId], references: [id])
+//   formId       String
+//   createdAt    DateTime @default(now())
+//   updatedAt    DateTime @updatedAt
+// }
